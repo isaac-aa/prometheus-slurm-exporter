@@ -30,6 +30,7 @@ var (
 	slurmPollLimit       = flag.Float64("slurm.poll-limit", 0, "throttle for slurmctld (default: 10s)")
 	slurmSinfoOverride   = flag.String("slurm.sinfo-cli", "", "sinfo cli override")
 	slurmSqueueOverride  = flag.String("slurm.squeue-cli", "", "squeue cli override")
+	slurmCluster	     = flag.String("slurm.cluster", "", "slurm cluster to monitor")
 	slurmLicenseOverride = flag.String("slurm.lic-cli", "", "squeue cli override")
 	slurmLicEnabled      = flag.Bool("slurm.collect-licenses", false, "Collect license info from slurm")
 	slurmCliFallback     = flag.Bool("slurm.cli-fallback", false, "drop the --json arg and revert back to standard squeue for performance reasons")
@@ -66,10 +67,14 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
+	cluster := "all"
+	if *slurmCluster != "" {
+		cluster = *slurmCluster
+	}
 	// defaults
 	cliOpts := CliOpts{
-		squeue:     []string{"squeue", "--json"},
-		sinfo:      []string{"sinfo", "--json"},
+		squeue:     []string{"squeue", "--json", "--clusters="+cluster},
+		sinfo:      []string{"sinfo", "--json", "--clusters="+cluster},
 		lic:        []string{"scontrol", "show", "lic", "--json"},
 		licEnabled: *slurmLicEnabled,
 		fallback:   *slurmCliFallback,
@@ -127,8 +132,8 @@ func NewConfig() (*Config, error) {
 	}
 	if cliOpts.fallback {
 		// we define a custom json format that we convert back into the openapi format
-		cliOpts.squeue = []string{"squeue", "--states=all", "-h", "-o", `{"a": "%a", "id": %A, "end_time": "%e", "u": "%u", "state": "%T", "p": "%P", "cpu": %C, "mem": "%m"}`}
-		cliOpts.sinfo = []string{"sinfo", "-h", "-o", `{"s": "%T", "mem": %m, "n": "%n", "l": "%O", "p": "%R", "fmem": "%e", "cstate": "%C", "w": %w}`}
+		cliOpts.squeue = []string{"squeue", "--clusters="+cluster, "--states=all", "-h", "-O", `{"a": "%a", "id": %A, "end_time": "%e", "u": "%u", "state": "%T", "p": "%P", "cpu": %C, "mem": "%m"}`}
+		cliOpts.sinfo = []string{"sinfo", "--clusters="+cluster, "-h", "-o", `{"s": "%T", "mem": %m, "n": "%n", "l": "%O", "p": "%R", "fmem": "%e", "cstate": "%C", "w": %w}`}
 	}
 	fetcher := NewCliFetcher(cliOpts.squeue...)
 	fetcher.cache = NewAtomicThrottledCache(config.pollLimit)

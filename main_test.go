@@ -53,8 +53,8 @@ func TestNewConfig_Default(t *testing.T) {
 	assert := assert.New(t)
 	config, err := NewConfig()
 	assert.Nil(err)
-	assert.Equal([]string{"sinfo", "--json"}, config.cliOpts.sinfo)
-	assert.Equal([]string{"squeue", "--json"}, config.cliOpts.squeue)
+	assert.Equal([]string{"sinfo", "--json", "--clusters=all"}, config.cliOpts.sinfo)
+	assert.Equal([]string{"squeue", "--json", "--clusters=all"}, config.cliOpts.squeue)
 	assert.Equal([]string{"scontrol", "show", "lic", "--json"}, config.cliOpts.lic)
 	assert.Equal(uint64(10), config.traceConf.rate)
 }
@@ -66,7 +66,7 @@ func TestNewConfig_NonDefault(t *testing.T) {
 	config, err := NewConfig()
 	t.Log(slurmCliFallback)
 	assert.Nil(err)
-	expected := []string{"squeue", "--states=all", "-h", "-o", `{"a": "%a", "id": %A, "end_time": "%e", "u": "%u", "state": "%T", "p": "%P", "cpu": %C, "mem": "%m"}`}
+	expected := []string{"squeue", "--clusters=all", "--states=all", "-h", "-O", `{"a": "%a", "id": %A, "end_time": "%e", "u": "%u", "state": "%T", "p": "%P", "cpu": %C, "mem": "%m"}`}
 	assert.Equal(expected, config.cliOpts.squeue)
 }
 
